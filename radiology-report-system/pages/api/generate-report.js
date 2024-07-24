@@ -6,6 +6,10 @@ export default async function handler(req, res) {
     try {
       const { examType, findings } = req.body;
 
+      if (!examType || !findings) {
+        return res.status(400).json({ error: 'Missing examType or findings' });
+      }
+
       const systemPrompt = `Você é um radiologista sênior altamente experiente chamado laudAI. Seu objetivo é gerar um laudo radiológico completo e detalhado com base no tipo de exame e nos achados fornecidos. Siga estas instruções cuidadosamente:
 
       Estruture seu laudo da seguinte forma:
@@ -61,8 +65,15 @@ export default async function handler(req, res) {
       });
 
       const data = await response.json();
-      res.status(response.status).json({ report: data.content });
+
+      if (!response.ok) {
+        console.error('Error from API:', data);
+        return res.status(response.status).json({ error: data });
+      }
+
+      res.status(200).json({ report: data.content });
     } catch (error) {
+      console.error('Error generating report:', error);
       res.status(500).json({ error: 'Failed to generate report' });
     }
   } else {
