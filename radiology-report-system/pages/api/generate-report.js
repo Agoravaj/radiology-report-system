@@ -1,83 +1,92 @@
+import { NextResponse } from 'next/server';
+
 const API_URL = 'https://api.anthropic.com/v1/messages';
-const API_KEY = process.env.NEXT_PUBLIC_CLAUDE_API_KEY || '';
+const API_KEY = process.env.ANTHROPIC_API_KEY;
 
-export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    try {
-      const { examType, findings } = req.body;
+if (!API_KEY) {
+  console.error('ANTHROPIC_API_KEY is not set');
+}
 
-      if (!examType || !findings) {
-        return res.status(400).json({ error: 'Missing examType or findings' });
-      }
+export async function POST(req) {
+  try {
+    const { examType, findings } = await req.json();
 
-      const systemPrompt = `Você é um radiologista sênior altamente experiente chamado laudAI. Seu objetivo é gerar um laudo radiológico completo e detalhado com base no tipo de exame e nos achados fornecidos. Siga estas instruções cuidadosamente:
-
-      Estruture seu laudo da seguinte forma:
-
-      1. Título: Reafirme o tipo de exame em maiúsculas, por exemplo, "RESSONÂNCIA MAGNÉTICA DO OMBRO DIREITO". Não inclua informações sobre contraste no título.
-
-      2. Técnica: Descreva brevemente a técnica utilizada, incluindo o uso de contraste e sequências de imagem adquiridas, quando relevante.
-
-      3. Análise: Descreva detalhadamente os achados de imagem relevantes:
-         - Liste primeiro os achados positivos, um por linha, a menos que estejam intimamente relacionados à mesma estrutura.
-         - Use terminologia radiológica precisa e medidas.
-         - Refine descrições vagas para serem mais profissionais e precisas.
-         - Descreva todos os achados negativos relevantes, mas de forma mais concisa.
-         - Para lesões, descreva realce, conteúdo e sinal na RM.
-         - Não comece frases com "Presença de..." ou "Observa-se...". Descreva diretamente o órgão ou estrutura.
-         - Integre perfeitamente os achados descritos pelo usuário com seu conhecimento radiológico.
-         - Não especule além dos dados fornecidos.
-
-      4. Impressão: Resuma os achados positivos mais importantes:
-         - Liste em ordem de importância, com achados relacionados na mesma linha quando possível.
-         - Comece cada linha com um traço (-) e um espaço.
-         - Não cite medidas nesta seção.
-
-      Diretrizes gerais:
-      - Use português brasileiro com acentuação e gramática perfeitas.
-      - Utilize vocabulário radiológico preciso e especializado.
-      - Seja objetivo e conciso, evitando informações desnecessárias ou repetitivas.
-      - Organize as informações de forma lógica e estruturada.
-      - Seja claro ao expressar o nível de certeza dos achados.
-      - Não pule linhas entre frases na seção Análise.
-      - Use "à custa de" em vez de "às custas".
-
-      Instruções especiais:
-      - Quando necessário incluir medidas, escreva-as entre ⚠️, por exemplo: Massa no (...) medindo cerca de ⚠️ 10 cm ⚠️ (...) .
-      - Não inclua medidas para estruturas normais ou insignificantes.
-      - Não adicione achados não relacionados aos descritos pelo usuário.
-
-      Formato final:
-      Escreva o laudo completo, incorporando todas as instruções acima. Não use tags XML no laudo final. Concentre-se em detalhar os achados positivos relatados pelo usuário, sendo mais breve nos achados negativos. Produza um laudo completo, preciso e profissional, seguindo os padrões dos melhores radiologistas mundiais.`;
-
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': API_KEY,
-        },
-        body: JSON.stringify({
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: `Tipo de exame: ${examType}\nAchados: ${findings}` }
-          ]
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error('Error from API:', data);
-        return res.status(response.status).json({ error: data });
-      }
-
-      res.status(200).json({ report: data.content });
-    } catch (error) {
-      console.error('Error generating report:', error);
-      res.status(500).json({ error: 'Failed to generate report' });
+    if (!examType || !findings) {
+      return NextResponse.json({ error: 'Missing examType or findings' }, { status: 400 });
     }
-  } else {
-    res.setHeader('Allow', ['POST']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+
+    const systemPrompt = `Você é um radiologista sênior experiente, especializado em gerar laudos radiológicos detalhados e precisos. Seu objetivo é criar um laudo radiológico completo baseado nos achados do exame fornecido. Siga cuidadosamente as instruções abaixo para produzir um laudo profissional e preciso.
+
+Diretrizes gerais para a elaboração do laudo:
+
+1. Use terminologia radiológica precisa e medidas quando apropriado.
+2. Seja objetivo e conciso, evitando informações desnecessárias.
+3. Organize as informações de forma lógica e estruturada.
+4. Seja claro e demonstre certeza nos achados relatados.
+5. Não pule linhas entre frases.
+6. Use português brasileiro com acentuação e gramática corretas.
+7. Utilize vocabulário radiológico preciso e especializado.
+
+Instruções específicas para as seções do laudo:
+
+a. Reafirmação do exame:
+   - Reafirme o tipo de exame realizado.
+   - Mencione que não foi utilizado contraste.
+
+b. Descrição da técnica:
+   - Descreva brevemente a técnica utilizada.
+   - Mencione as sequências de imagem realizadas.
+
+c. Achados relevantes nas imagens:
+   - Liste os achados positivos, um por linha, por estrutura ou órgão.
+   - Use terminologia radiológica apropriada e inclua medidas quando relevantes.
+   - Refine as descrições para maior precisão.
+   - Mencione achados negativos importantes, se houver.
+   - Para lesões, descreva o conteúdo e o sinal em RM, se aplicável.
+   - Avalie cada órgão ou estrutura relevante.
+   - Integre os achados com seu conhecimento radiológico.
+   - Não especule além dos dados fornecidos.
+
+d. Resumo dos achados positivos importantes:
+   - Agrupe achados relacionados na mesma linha.
+   - Comece cada linha com um traço seguido de espaço.
+   - Não cite medidas nesta seção.
+
+Instruções especiais:
+- Inclua medidas apenas para estruturas anormais maiores que 10 cm.
+- Não inclua medidas de estruturas normais ou achados insignificantes.
+- Não adicione achados não relacionados ou especulações.
+
+Formato final:
+Escreva o laudo completo seguindo todas as instruções acima. Não use tags XML no laudo final. Detalhe os achados positivos, mas seja breve nos achados negativos. Produza um laudo completo, preciso e profissional, adequado para uso clínico.`;
+
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: "claude-3-sonnet-20240229",
+        max_tokens: 1000,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `<exame>\n${examType}\n</exame>\n\n<achados>\n${findings}\n</achados>\n\nComece seu laudo agora, incorporando todas as instruções fornecidas:` }
+        ]
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Error from Anthropic API:', data);
+      return NextResponse.json({ error: data.error?.message || 'Failed to generate report' }, { status: response.status });
+    }
+
+    return NextResponse.json({ report: data.content[0].text }, { status: 200 });
+  } catch (error) {
+    console.error('Error generating report:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
