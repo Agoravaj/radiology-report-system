@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const next = require('next');
 const fetch = require('node-fetch');
