@@ -1,16 +1,14 @@
+// pages/index.js
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Head from 'next/head';
 
 // Utility functions
-const API_URL = 'https://api.anthropic.com/v1/messages';
-const API_KEY = process.env.NEXT_PUBLIC_CLAUDE_API_KEY || '';
-
 const analyzeReport = async (report) => {
-  const response = await fetch(API_URL, {
+  const response = await fetch('/api/analyzeReport', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
     },
     body: JSON.stringify({
       model: "claude-3-sonnet-20240229",
@@ -303,7 +301,7 @@ export default function AdvancedRadiologyReportSystem() {
       setAiSuggestions(aiSuggestions);
       setCriticalFindings(criticalFindings);
     } catch (error) {
-alert("An error occurred while analyzing the report.");
+      alert("An error occurred while analyzing the report.");
     } finally {
       if (!isRealTime) setIsAnalyzing(false);
     }
