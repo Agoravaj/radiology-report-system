@@ -3,12 +3,16 @@ const { fontFamily } = require("tailwindcss/defaultTheme")
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
+<<<<<<< HEAD
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
 	],
+=======
+  content: ["pages/**/*.{js,jsx}", "components/**/*.{js,jsx}"],
+>>>>>>> f824d4077d5c473c3bda2f9741cb43fe6995ca94
   theme: {
     container: {
       center: true,
@@ -57,6 +61,7 @@ module.exports = {
         },
       },
       borderRadius: {
+<<<<<<< HEAD
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
@@ -74,8 +79,17 @@ module.exports = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+=======
+        lg: `var(--radius)`,
+        md: `calc(var(--radius) - 2px)`,
+        sm: "calc(var(--radius) - 4px)",
+>>>>>>> f824d4077d5c473c3bda2f9741cb43fe6995ca94
       },
     },
   },
   plugins: [require("tailwindcss-animate")],
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> f824d4077d5c473c3bda2f9741cb43fe6995ca94

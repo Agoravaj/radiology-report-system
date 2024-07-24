@@ -69,6 +69,12 @@
 @layer base {
   * {
     @apply border-border;
+<<<<<<< HEAD
+=======
+  }
+  body {
+    @apply bg-background text-foreground;
+>>>>>>> f824d4077d5c473c3bda2f9741cb43fe6995ca94
   }
   body {
     @apply bg-background text-foreground;
