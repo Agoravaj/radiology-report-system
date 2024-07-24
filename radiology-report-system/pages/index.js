@@ -1,22 +1,22 @@
-import React, { useState } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
-import TextAlign from '@tiptap/extension-text-align'
-import Highlight from '@tiptap/extension-highlight'
-import axios from 'axios'
+import React, { useState } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
+import Highlight from '@tiptap/extension-highlight';
+import axios from 'axios';
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const MenuBar = ({ editor }) => {
   if (!editor) {
-    return null
+    return null;
   }
 
   return (
@@ -34,42 +34,48 @@ const MenuBar = ({ editor }) => {
         H
       </ToggleGroupItem>
     </ToggleGroup>
-  )
-}
+  );
+};
 
 const RichTextEditor = ({ initialContent }) => {
   const editor = useEditor({
     extensions: [StarterKit, Underline, TextAlign.configure({ types: ['heading', 'paragraph'] }), Highlight],
     content: initialContent,
-  })
+  });
 
   return (
     <div className="rich-text-editor">
       <MenuBar editor={editor} />
       <EditorContent editor={editor} className="prose dark:prose-invert max-w-none p-4 border rounded-md" />
     </div>
-  )
-}
+  );
+};
 
 export default function Home() {
-  const [examType, setExamType] = useState('')
-  const [findings, setFindings] = useState('')
-  const [report, setReport] = useState('')
-  const [theme, setTheme] = useState('light')
-  const [isLoading, setIsLoading] = useState(false)
+  const [examType, setExamType] = useState('');
+  const [findings, setFindings] = useState('');
+  const [report, setReport] = useState('');
+  const [theme, setTheme] = useState('light');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
     try {
-      const response = await axios.post('/api/generate-report', { examType, findings })
-      setReport(response.data.report)
+      if (!examType || !findings) {
+        setReport('Please fill in all fields.');
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await axios.post('/api/generate-report', { examType, findings });
+      setReport(response.data.report);
     } catch (error) {
-      console.error('Error generating report:', error)
-      setReport('Error generating report. Please try again.')
+      console.error('Error generating report:', error.response?.data || error.message);
+      setReport('Error generating report. Please try again.');
     }
-    setIsLoading(false)
-  }
+    setIsLoading(false);
+  };
 
   return (
     <div className={`container mx-auto p-4 ${theme}`}>
@@ -126,5 +132,5 @@ export default function Home() {
         </Card>
       )}
     </div>
-  )
+  );
 }
