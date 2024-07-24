@@ -3,13 +3,14 @@ import Head from 'next/head';
 
 // Utility functions
 const API_URL = 'https://api.anthropic.com/v1/messages';
+const API_KEY = process.env.NEXT_PUBLIC_CLAUDE_API_KEY || '';
 
-const analyzeReport = async (apiKey, report) => {
+const analyzeReport = async (report) => {
   const response = await fetch(API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
+      'x-api-key': API_KEY,
     },
     body: JSON.stringify({
       model: "claude-3-sonnet-20240229",
@@ -71,20 +72,20 @@ const medicalTerms = [
 
 // Components
 const Sidebar = ({ templates, setTemplate, customSections, onAddCustomSection }) => (
-  <div className="w-64 p-4 border-r">
-    <h3 className="mb-2 text-lg font-semibold">Templates</h3>
+  <div className="w-64 p-4 border-r border-zinc-300">
+    <h3 className="mb-2 text-lg font-semibold text-zinc-800">Templates</h3>
     <ul>
       {Object.keys(templates).map(key => (
-        <li key={key} className="cursor-pointer hover:text-blue-500" onClick={() => setTemplate(key)}>{key}</li>
+        <li key={key} className="cursor-pointer hover:text-zinc-600" onClick={() => setTemplate(key)}>{key}</li>
       ))}
     </ul>
-    <h3 className="mt-6 mb-2 text-lg font-semibold">Custom Sections</h3>
+    <h3 className="mt-6 mb-2 text-lg font-semibold text-zinc-800">Custom Sections</h3>
     <ul>
       {customSections.map((section, index) => (
         <li key={index}>{section}</li>
       ))}
     </ul>
-    <button onClick={onAddCustomSection} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
+    <button onClick={onAddCustomSection} className="mt-4 bg-zinc-700 text-zinc-100 px-4 py-2 rounded hover:bg-zinc-600">
       Add Custom Section
     </button>
   </div>
@@ -133,15 +134,15 @@ const Editor = React.forwardRef(({ value, onChange, medicalTerms }, ref) => {
             e.target.selectionStart = e.target.selectionEnd = e.target.selectionStart + 2;
           }
         }}
-        className="w-full h-96 p-2 border border-gray-300 rounded resize-none"
+        className="w-full h-[calc(100vh-300px)] p-4 border border-zinc-300 rounded resize-none bg-zinc-50 text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-500"
         placeholder="Enter your radiology report here..."
       />
       {suggestions.length > 0 && (
-        <div className="absolute bottom-0 left-0 bg-white border border-gray-300 rounded shadow-lg">
+        <div className="absolute bottom-0 left-0 bg-zinc-100 border border-zinc-300 rounded shadow-lg">
           {suggestions.map((suggestion, index) => (
             <div
               key={index}
-              className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+              className="px-4 py-2 cursor-pointer hover:bg-zinc-200"
               onClick={() => handleSuggestionClick(suggestion)}
             >
               {suggestion}
@@ -156,22 +157,20 @@ const Editor = React.forwardRef(({ value, onChange, medicalTerms }, ref) => {
 Editor.displayName = 'Editor';
 
 const Preview = ({ report }) => (
-  <div className="border border-gray-300 rounded p-4 h-96 overflow-auto">
+  <div className="border border-zinc-300 rounded p-4 h-[calc(100vh-300px)] overflow-auto bg-zinc-50 text-zinc-800">
     {report.split('\n').map((line, index) => {
       if (line.startsWith('# ')) {
-        return <h1 key={index} className="text-2xl font-bold mb-4">{line.substring(2)}</h1>;
+        return <h1 key={index} className="text-2xl font-bold mb-4 text-zinc-900">{line.substring(2)}</h1>;
       } else if (line.startsWith('## ')) {
-        return <h2 key={index} className="text-xl font-semibold mb-2">{line.substring(3)}</h2>;
+        return <h2 key={index} className="text-xl font-semibold mb-2 text-zinc-800">{line.substring(3)}</h2>;
       } else {
-        return <p key={index} className="mb-2">{line}</p>;
+        return <p key={index} className="mb-2 text-zinc-700">{line}</p>;
       }
     })}
   </div>
 );
 
 const Toolbar = ({
-  apiKey,
-  setApiKey,
   onLoadTemplate,
   onToggleSidebar,
   onInsertMeasurement,
@@ -183,21 +182,14 @@ const Toolbar = ({
   onToggleRealTimeAnalysis
 }) => (
   <div className="flex flex-wrap gap-2 mb-4">
-    <input
-      type="password"
-      placeholder="Enter your Claude API key"
-      value={apiKey}
-      onChange={(e) => setApiKey(e.target.value)}
-      className="p-2 border border-gray-300 rounded"
-    />
-    <button onClick={onLoadTemplate} className="bg-blue-500 text-white px-4 py-2 rounded">Load Template</button>
-    <button onClick={onToggleSidebar} className="bg-gray-500 text-white px-4 py-2 rounded">Toggle Sidebar</button>
-    <button onClick={onInsertMeasurement} className="bg-green-500 text-white px-4 py-2 rounded">Insert Measurement</button>
-    <button onClick={onUndo} disabled={!canUndo} className={`px-4 py-2 rounded ${canUndo ? 'bg-yellow-500 text-white' : 'bg-gray-300 text-gray-500'}`}>Undo</button>
-    <button onClick={onRedo} disabled={!canRedo} className={`px-4 py-2 rounded ${canRedo ? 'bg-yellow-500 text-white' : 'bg-gray-300 text-gray-500'}`}>Redo</button>
+    <button onClick={onLoadTemplate} className="bg-zinc-700 text-zinc-100 px-4 py-2 rounded hover:bg-zinc-600">Load Template</button>
+    <button onClick={onToggleSidebar} className="bg-zinc-600 text-zinc-100 px-4 py-2 rounded hover:bg-zinc-500">Toggle Sidebar</button>
+    <button onClick={onInsertMeasurement} className="bg-zinc-700 text-zinc-100 px-4 py-2 rounded hover:bg-zinc-600">Insert Measurement</button>
+    <button onClick={onUndo} disabled={!canUndo} className={`px-4 py-2 rounded ${canUndo ? 'bg-zinc-700 text-zinc-100 hover:bg-zinc-600' : 'bg-zinc-300 text-zinc-500'}`}>Undo</button>
+    <button onClick={onRedo} disabled={!canRedo} className={`px-4 py-2 rounded ${canRedo ? 'bg-zinc-700 text-zinc-100 hover:bg-zinc-600' : 'bg-zinc-300 text-zinc-500'}`}>Redo</button>
     <button 
       onClick={onToggleRealTimeAnalysis} 
-      className={`px-4 py-2 rounded ${isRealTimeAnalysis ? 'bg-purple-500 text-white' : 'bg-gray-500 text-white'}`}
+      className={`px-4 py-2 rounded ${isRealTimeAnalysis ? 'bg-zinc-800 text-zinc-100' : 'bg-zinc-600 text-zinc-100'} hover:bg-zinc-700`}
     >
       Real-time Analysis: {isRealTimeAnalysis ? 'ON' : 'OFF'}
     </button>
@@ -213,7 +205,7 @@ const StatusBar = ({
   onAnalyze,
   onExport
 }) => (
-  <div className="flex flex-wrap justify-between items-center mt-4 p-2 bg-gray-100 rounded">
+  <div className="flex flex-wrap justify-between items-center mt-4 p-2 bg-zinc-100 rounded text-zinc-700">
     <span>Words: {wordCount}</span>
     <span>Readability Score: {readabilityScore.toFixed(2)}%</span>
     <span>Completeness: {completenessScore.toFixed(2)}%</span>
@@ -221,29 +213,29 @@ const StatusBar = ({
     <button 
       onClick={onAnalyze} 
       disabled={isAnalyzing}
-      className={`px-4 py-2 rounded ${isAnalyzing ? 'bg-gray-300 text-gray-500' : 'bg-blue-500 text-white'}`}
+      className={`px-4 py-2 rounded ${isAnalyzing ? 'bg-zinc-300 text-zinc-500' : 'bg-zinc-700 text-zinc-100 hover:bg-zinc-600'}`}
     >
       {isAnalyzing ? 'Analyzing...' : 'Analyze Report'}
     </button>
-    <button onClick={onExport} className="bg-green-500 text-white px-4 py-2 rounded">
+    <button onClick={onExport} className="bg-zinc-700 text-zinc-100 px-4 py-2 rounded hover:bg-zinc-600">
       Export Report
     </button>
   </div>
 );
 
 const AISuggestions = ({ suggestions }) => (
-  <div className="mt-4 p-4 border border-blue-300 rounded bg-blue-50">
-    <h2 className="text-xl font-semibold mb-2">AI Suggestions</h2>
+  <div className="mt-4 p-4 border border-zinc-300 rounded bg-zinc-50 text-zinc-800">
+    <h2 className="text-xl font-semibold mb-2 text-zinc-900">AI Suggestions</h2>
     <p>{suggestions}</p>
   </div>
 );
 
 const CriticalFindings = ({ findings }) => (
-  <div className="mt-4 p-4 border border-red-300 rounded bg-red-50">
-    <h2 className="text-xl font-semibold mb-2 text-red-600">Critical Findings</h2>
+  <div className="mt-4 p-4 border border-zinc-400 rounded bg-zinc-100 text-zinc-800">
+    <h2 className="text-xl font-semibold mb-2 text-zinc-900">Critical Findings</h2>
     <ul className="list-disc pl-5">
       {findings.map((finding, index) => (
-        <li key={index} className="text-red-600">{finding}</li>
+        <li key={index} className="text-zinc-700">{finding}</li>
       ))}
     </ul>
   </div>
@@ -256,14 +248,14 @@ const FloatingActionButton = ({ onSave, onExport, onAnalyze }) => {
     <div className="fixed bottom-4 right-4">
       {isOpen && (
         <div className="mb-2 flex flex-col gap-2">
-          <button onClick={onSave} className="bg-green-500 text-white w-12 h-12 rounded-full shadow-lg">💾</button>
-          <button onClick={onExport} className="bg-blue-500 text-white w-12 h-12 rounded-full shadow-lg">📤</button>
-          <button onClick={onAnalyze} className="bg-purple-500 text-white w-12 h-12 rounded-full shadow-lg">🔍</button>
+          <button onClick={onSave} className="bg-zinc-700 text-zinc-100 w-12 h-12 rounded-full shadow-lg hover:bg-zinc-600">💾</button>
+          <button onClick={onExport} className="bg-zinc-700 text-zinc-100 w-12 h-12 rounded-full shadow-lg hover:bg-zinc-600">📤</button>
+          <button onClick={onAnalyze} className="bg-zinc-700 text-zinc-100 w-12 h-12 rounded-full shadow-lg hover:bg-zinc-600">🔍</button>
         </div>
       )}
       <button 
         onClick={() => setIsOpen(!isOpen)} 
-        className="bg-red-500 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl"
+        className="bg-zinc-800 text-zinc-100 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl hover:bg-zinc-700"
       >
         {isOpen ? '✕' : '+'}
       </button>
@@ -273,7 +265,6 @@ const FloatingActionButton = ({ onSave, onExport, onAnalyze }) => {
 
 // Main App Component
 export default function AdvancedRadiologyReportSystem() {
-  const [apiKey, setApiKey] = useState('');
   const [report, setReport] = useState('');
   const [template, setTemplate] = useState('ct-brain');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -306,24 +297,19 @@ export default function AdvancedRadiologyReportSystem() {
   }, [report, isRealTimeAnalysis]);
 
   const handleAnalyzeReport = useCallback(async (isRealTime = false) => {
-    if (!apiKey) {
-      alert("Please enter your Claude API key.");
-      return;
-    }
-
     if (!isRealTime) setIsAnalyzing(true);
     try {
-      const { aiSuggestions, criticalFindings } = await analyzeReport(apiKey, report);
+      const { aiSuggestions, criticalFindings } = await analyzeReport(report);
       setAiSuggestions(aiSuggestions);
       setCriticalFindings(criticalFindings);
     } catch (error) {
-      alert("An error occurred while analyzing the report.");
+alert("An error occurred while analyzing the report.");
     } finally {
       if (!isRealTime) setIsAnalyzing(false);
     }
-  }, [apiKey, report]);
+  }, [report]);
 
- const handleReportChange = (newReport) => {
+  const handleReportChange = (newReport) => {
     setReport(newReport);
     if (currentVersion < versionHistory.length - 1) {
       setVersionHistory(versionHistory.slice(0, currentVersion + 1));
@@ -397,15 +383,15 @@ export default function AdvancedRadiologyReportSystem() {
   };
 
   return (
-    <div className="min-h-screen p-4">
+    <div className="min-h-screen p-4 bg-zinc-100">
       <Head>
-        <title>Advanced Radiology Report System</title>
+        <title>Enhanced Radiology Report System</title>
         <meta name="description" content="AI-powered radiology report system" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">
+        <h1 className="text-4xl font-bold text-center mb-8 text-zinc-800">
           Enhanced AI-Powered Radiology Report System
         </h1>
 
@@ -421,8 +407,6 @@ export default function AdvancedRadiologyReportSystem() {
 
           <div className="flex-grow space-y-4">
             <Toolbar
-              apiKey={apiKey}
-              setApiKey={setApiKey}
               onLoadTemplate={() => handleReportChange(templates[template])}
               onToggleSidebar={() => setShowSidebar(!showSidebar)}
               onInsertMeasurement={handleInsertMeasurement}
