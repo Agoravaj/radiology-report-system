@@ -1,279 +1,252 @@
 import React, { useState } from 'react';
-import Head from 'next/head';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, FileText, Brain, Zap, Sparkles, Copy, Download } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { useTheme } from 'next-themes';
+import { MoonIcon, SunIcon } from "@radix-ui/react-icons";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export default function Home() {
-  const [examType, setExamType] = useState('');
-  const [findings, setFindings] = useState('');
-  const [report, setReport] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+const examTypes = [
+  { value: 'mri', label: 'MRI' },
+  { value: 'ct', label: 'CT Scan' },
+  { value: 'xray', label: 'X-Ray' },
+  { value: 'ultrasound', label: 'Ultrasound' },
+];
 
-  const generateReport = async (examType, findings) => {
-    const API_URL = 'https://api.anthropic.com/v1/messages';
-    const API_KEY = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY; // Make sure to set this in your .env.local file
-
-    if (!API_KEY) {
-      throw new Error('ANTHROPIC_API_KEY is not set');
-    }
-
-    const systemPrompt = `Você é um radiologista sênior experiente, especializado em gerar laudos radiológicos detalhados e precisos. Seu objetivo é criar um laudo radiológico completo baseado nos achados do exame fornecido. Siga cuidadosamente as instruções abaixo para produzir um laudo profissional e preciso.
-
-    Diretrizes gerais para a elaboração do laudo:
-    1. Use terminologia radiológica precisa e medidas quando apropriado.
-    2. Seja objetivo e conciso, evitando informações desnecessárias.
-    3. Organize as informações de forma lógica e estruturada.
-    4. Seja claro e demonstre certeza nos achados relatados.
-    5. Não pule linhas entre frases.
-    6. Use português brasileiro com acentuação e gramática corretas.
-    7. Utilize vocabulário radiológico preciso e especializado.
-
-    Instruções específicas para as seções do laudo:
-    a. Reafirmação do exame:
-       - Reafirme o tipo de exame realizado.
-       - Mencione que não foi utilizado contraste.
-    b. Descrição da técnica:
-       - Descreva brevemente a técnica utilizada.
-       - Mencione as sequências de imagem realizadas.
-    c. Achados relevantes nas imagens:
-       - Liste os achados positivos, um por linha, por estrutura ou órgão.
-       - Use terminologia radiológica apropriada e inclua medidas quando relevantes.
-       - Refine as descrições para maior precisão.
-       - Mencione achados negativos importantes, se houver.
-       - Para lesões, descreva o conteúdo e o sinal em RM, se aplicável.
-       - Avalie cada órgão ou estrutura relevante.
-       - Integre os achados com seu conhecimento radiológico.
-       - Não especule além dos dados fornecidos.
-    d. Resumo dos achados positivos importantes:
-       - Agrupe achados relacionados na mesma linha.
-       - Comece cada linha com um traço seguido de espaço.
-       - Não cite medidas nesta seção.
-
-    Instruções especiais:
-    - Inclua medidas apenas para estruturas anormais maiores que 10 cm.
-    - Não inclua medidas de estruturas normais ou achados insignificantes.
-    - Não adicione achados não relacionados ou especulações.
-
-    Formato final:
-    Escreva o laudo completo seguindo todas as instruções acima. Não use tags XML no laudo final. Detalhe os achados positivos, mas seja breve nos achados negativos. Produza um laudo completo, preciso e profissional, adequado para uso clínico.`;
-
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: "claude-3-sonnet-20240229",
-        max_tokens: 1000,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `<exame>\n${examType}\n</exame>\n\n<achados>\n${findings}\n</achados>\n\nComece seu laudo agora, incorporando todas as instruções fornecidas:` }
-        ]
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Failed to generate report');
-    }
-
-    const data = await response.json();
-    return data.content[0].text;
+const TabContent = ({ task, inputValue, setInputValue, isLoading, handleSubmit }) => {
+  const inputProps = {
+    id: task,
+    placeholder: task === 'radgen' ? "Describe the findings here..." :
+                 task === 'impressions' ? "Paste the full report here..." :
+                 "Paste your text here...",
+    rows: task === 'radgen' ? 5 : 10,
+    value: inputValue,
+    onChange: (e) => setInputValue(e.target.value),
+    className: "resize-none"
   };
 
-  const handleSubmit = async (e) => {
+  const buttonProps = {
+    text: task === 'radgen' ? "Generate Report" :
+          task === 'impressions' ? "Generate Impressions" :
+          "Enhance Text",
+    icon: task === 'radgen' ? Brain : task === 'impressions' ? Zap : Sparkles,
+  };
+
+  return (
+    <form onSubmit={(e) => handleSubmit(e, task)} className="space-y-4">
+      {task === 'radgen' && (
+        <div className="space-y-2">
+          <Label htmlFor="examType">Exam Type</Label>
+          <Select onValueChange={(value) => setInputValue({ ...inputValue, examType: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select exam type" />
+            </SelectTrigger>
+            <SelectContent>
+              {examTypes.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      <div className="space-y-2">
+        <Label htmlFor={task}>
+          {task === 'radgen' ? 'Findings' : task === 'impressions' ? 'Full Report' : 'Text to Enhance'}
+        </Label>
+        <Textarea {...inputProps} />
+      </div>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <buttonProps.icon className="mr-2 h-4 w-4" />
+                  {buttonProps.text}
+                </>
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{buttonProps.text} using AI</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </form>
+  );
+};
+
+const ResultDisplay = ({ result, error, handleCopy, handleDownload }) => (
+  <div className="mt-6 space-y-4">
+    {error && (
+      <Alert variant="destructive">
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    )}
+    {result && (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex justify-between items-center">
+            Result
+            <div className="space-x-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" onClick={handleCopy}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Copy to clipboard</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" onClick={handleDownload}>
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Download result</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[200px] w-full rounded-md border">
+            <div className="p-4">
+              <pre className="whitespace-pre-wrap">{result}</pre>
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    )}
+  </div>
+);
+
+const AIQuickRad = () => {
+  const [activeTab, setActiveTab] = useState('radgen');
+  const [inputValues, setInputValues] = useState({
+    radgen: { examType: '', findings: '' },
+    impressions: '',
+    'smart-text': ''
+  });
+  const [result, setResult] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { theme, setTheme } = useTheme();
+
+  const handleSubmit = async (e, task) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     try {
-      const generatedReport = await generateReport(examType, findings);
-      setReport(generatedReport);
+      const response = await fetch('/api/generate-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          examType: task === 'radgen' ? inputValues.radgen.examType : '',
+          findings: task === 'radgen' ? inputValues.radgen.findings : inputValues[task],
+          task 
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to process request');
+      setResult(data.result);
     } catch (error) {
       setError(error.message);
     }
     setIsLoading(false);
   };
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(result);
+  };
+
+  const handleDownload = () => {
+    const element = document.createElement("a");
+    const file = new Blob([result], {type: 'text/plain'});
+    element.href = URL.createObjectURL(file);
+    element.download = "ai_quick_rad_result.txt";
+    document.body.appendChild(element);
+    element.click();
+  };
+
   return (
-    <>
-      <Head>
-        <title>AI Quick Rad - Advanced Radiology Reporting</title>
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
-      </Head>
-      <div className="main-container">
-        <header>
-          <h1>AI Quick Rad</h1>
-          <p>Advanced Radiology Reporting System</p>
-        </header>
-        <main>
-          <form onSubmit={handleSubmit}>
-            <div className="input-group">
-              <input
-                type="text"
-                id="examType"
-                value={examType}
-                onChange={(e) => setExamType(e.target.value)}
-                required
-                placeholder=" "
-              />
-              <label htmlFor="examType">Exam Type</label>
-            </div>
-            <div className="input-group">
-              <textarea
-                id="findings"
-                value={findings}
-                onChange={(e) => setFindings(e.target.value)}
-                required
-                placeholder=" "
-              ></textarea>
-              <label htmlFor="findings">Findings</label>
-            </div>
-            <button type="submit" disabled={isLoading}>
-              {isLoading ? 'Generating...' : 'Generate Report'}
-            </button>
-          </form>
-          {error && <div className="error">{error}</div>}
-          {report && (
-            <div className="report">
-              <h2>Generated Report</h2>
-              <pre>{report}</pre>
-            </div>
-          )}
-        </main>
-      </div>
-      <style jsx global>{`
-        * {
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-        }
-        body {
-          font-family: 'Poppins', sans-serif;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: #333;
-          line-height: 1.6;
-          min-height: 100vh;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          padding: 2rem;
-        }
-        .main-container {
-          background: rgba(255, 255, 255, 0.9);
-          border-radius: 20px;
-          box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-          backdrop-filter: blur(4px);
-          border: 1px solid rgba(255, 255, 255, 0.18);
-          padding: 2rem;
-          width: 100%;
-          max-width: 800px;
-        }
-        header {
-          text-align: center;
-          margin-bottom: 2rem;
-        }
-        h1 {
-          font-size: 2.5rem;
-          color: #4a5568;
-          margin-bottom: 0.5rem;
-        }
-        header p {
-          color: #718096;
-        }
-        form {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-        }
-        .input-group {
-          position: relative;
-        }
-        input, textarea {
-          width: 100%;
-          padding: 0.75rem;
-          border: 2px solid #cbd5e0;
-          border-radius: 8px;
-          font-size: 1rem;
-          transition: border-color 0.3s ease;
-        }
-        textarea {
-          min-height: 150px;
-          resize: vertical;
-        }
-        input:focus, textarea:focus {
-          outline: none;
-          border-color: #4299e1;
-        }
-        label {
-          position: absolute;
-          left: 0.75rem;
-          top: 0.75rem;
-          color: #718096;
-          transition: all 0.3s ease;
-          pointer-events: none;
-        }
-        input:focus ~ label, input:not(:placeholder-shown) ~ label,
-        textarea:focus ~ label, textarea:not(:placeholder-shown) ~ label {
-          top: -0.5rem;
-          left: 0.5rem;
-          font-size: 0.75rem;
-          background-color: white;
-          padding: 0 0.25rem;
-          color: #4299e1;
-        }
-        button {
-          background-color: #4299e1;
-          color: white;
-          border: none;
-          padding: 0.75rem 1.5rem;
-          border-radius: 8px;
-          font-size: 1rem;
-          cursor: pointer;
-          transition: background-color 0.3s ease;
-        }
-        button:hover {
-          background-color: #3182ce;
-        }
-        button:disabled {
-          background-color: #a0aec0;
-          cursor: not-allowed;
-        }
-        .error {
-          background-color: #fed7d7;
-          border: 1px solid #f56565;
-          color: #c53030;
-          padding: 0.75rem;
-          border-radius: 8px;
-          margin-top: 1rem;
-        }
-        .report {
-          margin-top: 2rem;
-          background-color: #ebf8ff;
-          border: 1px solid #4299e1;
-          border-radius: 8px;
-          padding: 1rem;
-        }
-        .report h2 {
-          color: #2b6cb0;
-          margin-bottom: 0.5rem;
-        }
-        .report pre {
-          white-space: pre-wrap;
-          word-wrap: break-word;
-        }
-        @media (max-width: 600px) {
-          body {
-            padding: 1rem;
-          }
-          .main-container {
-            padding: 1.5rem;
-          }
-          h1 {
-            font-size: 2rem;
-          }
-        }
-      `}</style>
-    </>
+    <div className="container mx-auto p-4 space-y-4">
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-3xl font-bold">AI Quick Rad</CardTitle>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+                    <SunIcon className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                    <MoonIcon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                    <span className="sr-only">Toggle theme</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Toggle theme</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <CardDescription>Advanced Radiology Reporting System</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="radgen">RadGen</TabsTrigger>
+              <TabsTrigger value="impressions">Impressions</TabsTrigger>
+              <TabsTrigger value="smart-text">Smart Text</TabsTrigger>
+            </TabsList>
+            {['radgen', 'impressions', 'smart-text'].map(task => (
+              <TabsContent key={task} value={task}>
+                <TabContent
+                  task={task}
+                  inputValue={task === 'radgen' ? inputValues[task] : inputValues[task]}
+                  setInputValue={(value) => setInputValues(prev => ({ ...prev, [task]: value }))}
+                  isLoading={isLoading}
+                  handleSubmit={handleSubmit}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+          
+          <ResultDisplay 
+            result={result} 
+            error={error} 
+            handleCopy={handleCopy}
+            handleDownload={handleDownload}
+          />
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <p className="text-sm text-muted-foreground">Powered by AI</p>
+        </CardFooter>
+      </Card>
+    </div>
   );
-}
+};
+
+export default AIQuickRad;
